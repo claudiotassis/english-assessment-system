@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Assessment</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>English Assessment</h1>
+            <div id="student-info">
+                <p>Student: <span id="student-name"></span></p>
+                <p>Class: <span id="student-class"></span></p>
+            </div>
+            <div id="timer">
+                <p>Time Remaining: <span id="time-remaining">45:00</span></p>
+            </div>
+        </header>
+
+        <main>
+            <div id="assessment-container">
+                <form id="assessment-form">
+                    <!-- Part 1: Theoretical Understanding -->
+                    <section class="assessment-section">
+                        <h2>Part 1: Theoretical Understanding (0.5 points)</h2>
+                        <div class="question">
+                            <p>1. Explain:</p>
+                            <div class="sub-question">
+                                <p>a) The difference between the use of Present Simple and Present Continuous.</p>
+                                <textarea name="q1a" rows="4" required></textarea>
+                            </div>
+                            <div class="sub-question">
+                                <p>b) Why perception verbs (see, sound, smell, taste, feel) and feeling verbs (love, hate, like, prefer, want) are generally not used in the gerund form (continuous form).</p>
+                                <textarea name="q1b" rows="4" required></textarea>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Part 2: Completing Sentences -->
+                    <section class="assessment-section">
+                        <h2>Part 2: Completing Sentences (0.6 points)</h2>
+                        <p>2. Complete the sentences with the correct form of the verbs in parentheses, using Present Simple or Present Continuous as appropriate:</p>
+                        
+                        <div class="question">
+                            <p>a) Right now, John _________________ (play) soccer while I _________________ (watch) him from the bleachers.</p>
+                            <div class="input-group">
+                                <input type="text" name="q2a1" required>
+                                <input type="text" name="q2a2" required>
+                            </div>
+                        </div>
+                        
+                        <div class="question">
+                            <p>b) She _________________ (hate) spicy food. That's why she _________________ (not/eat) the curry right now.</p>
+                            <div class="input-group">
+                                <input type="text" name="q2b1" required>
+                                <input type="text" name="q2b2" required>
+                            </div>
+                        </div>
+                        
+                        <div class="question">
+                            <p>c) I _________________ (see) what you mean, but Tom _________________ (not/understand) the problem.</p>
+                            <div class="input-group">
+                                <input type="text" name="q2c1" required>
+                                <input type="text" name="q2c2" required>
+                            </div>
+                        </div>
+                        
+                        <div class="question">
+                            <p>d) They say the music _________________ (sound) great, but it _________________ (not/sound) good to me.</p>
+                            <div class="input-group">
+                                <input type="text" name="q2d1" required>
+                                <input type="text" name="q2d2" required>
+                            </div>
+                        </div>
+                        
+                        <div class="question">
+                            <p>e) We _________________ (believe) in honesty while some people _________________ (tell) lies at this very moment.</p>
+                            <div class="input-group">
+                                <input type="text" name="q2e1" required>
+                                <input type="text" name="q2e2" required>
+                            </div>
+                        </div>
+                        
+                        <div class="question">
+                            <p>f) She _________________ (taste) the soup to check if it needs more salt. She always _________________ (prefer) well-seasoned food.</p>
+                            <div class="input-group">
+                                <input type="text" name="q2f1" required>
+                                <input type="text" name="q2f2" required>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Part 3: Error Identification and Correction -->
+                    <section class="assessment-section">
+                        <h2>Part 3: Error Identification and Correction (0.4 points)</h2>
+                        <p>3. Identify and correct the errors in the following sentences:</p>
+                        
+                        <div class="question">
+                            <p>a) I am seeing the mountains from my window.</p>
+                            <input type="text" name="q3a" required>
+                        </div>
+                        
+                        <div class="question">
+                            <p>b) She is loving chocolate ice cream.</p>
+                            <input type="text" name="q3b" required>
+                        </div>
+                        
+                        <div class="question">
+                            <p>c) They are wanting to go to the beach this weekend.</p>
+                            <input type="text" name="q3c" required>
+                        </div>
+                        
+                        <div class="question">
+                            <p>d) He is smelling the roses in the garden.</p>
+                            <input type="text" name="q3d" required>
+                        </div>
+                        
+                        <div class="question">
+                            <p>e) The music is sounding beautiful tonight.</p>
+                            <input type="text" name="q3e" required>
+                        </div>
+                        
+                        <div class="question">
+                            <p>f) She is believing everything he says.</p>
+                            <input type="text" name="q3f" required>
+                        </div>
+                        
+                        <div class="question">
+                            <p>g) I am thinking that you are right. (verb "think" as an opinion)</p>
+                            <input type="text" name="q3g" required>
+                        </div>
+                        
+                        <div class="question">
+                            <p>h) They are having three cars. (verb "have" as possession)</p>
+                            <input type="text" name="q3h" required>
+                        </div>
+                    </section>
+
+                    <!-- Part 4: Writing Production -->
+                    <section class="assessment-section">
+                        <h2>Part 4: Writing Production (1.5 points)</h2>
+                        <p>4. Choose ONE of the options below and write a paragraph of 10-12 lines. Use Present Simple and Present Continuous correctly, including feeling and perception verbs in the appropriate tense:</p>
+                        
+                        <div class="radio-options">
+                            <div class="radio-option">
+                                <input type="radio" id="option-a" name="writing-option" value="A" required>
+                                <label for="option-a">Option A: Describe a typical day in your life (Present Simple) and compare it with what is happening today (Present Continuous). Include what you normally see, what sounds pleasant to you, what you like and prefer, as well as temporary activities that are occurring.</label>
+                            </div>
+                            
+                            <div class="radio-option">
+                                <input type="radio" id="option-b" name="writing-option" value="B">
+                                <label for="option-b">Option B: Describe a party that is happening right now. Include what people are doing (Present Continuous) and what you perceive through your senses, such as what you see and how the music sounds (perception verbs in Present Simple). Also mention preferences and feelings about the situation.</label>
+                            </div>
+                            
+                            <div class="radio-option">
+                                <input type="radio" id="option-c" name="writing-option" value="C">
+                                <label for="option-c">Option C: Imagine you are on a trip. Compare your habitual activities (Present Simple) with what you are doing during this trip (Present Continuous). Include your perceptions (such as what you see and how places sound) and feelings about the experience.</label>
+                            </div>
+                        </div>
+                        
+                        <div class="writing-area">
+                            <textarea name="writing-response" rows="12" required></textarea>
+                            <p class="word-count">Word count: <span id="word-count">0</span> words</p>
+                        </div>
+                    </section>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn primary">Submit Assessment</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Results section (initially hidden) -->
+            <div id="results" class="hidden">
+                <h2>Assessment Results</h2>
+                <div class="score-summary">
+                    <div class="score-circle">
+                        <span id="final-score">0.0</span>/3.0
+                    </div>
+                    <div class="score-breakdown">
+                        <p>Part 1: <span id="part1-score">0</span>/0.5</p>
+                        <p>Part 2: <span id="part2-score">0</span>/0.6</p>
+                        <p>Part 3: <span id="part3-score">0</span>/0.4</p>
+                        <p>Part 4: <span id="part4-score">0</span>/1.5</p>
+                    </div>
+                </div>
+                
+                <div class="detailed-feedback">
+                    <h3>Detailed Feedback</h3>
+                    <div id="feedback-content"></div>
+                </div>
+                
+                <div class="form-actions">
+                    <button id="return-home" class="btn primary">Return to Home</button>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 English Assessment System. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.8/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.8/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.8/firebase-firestore-compat.js"></script>
+    
+    <!-- Main Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/assessment.js"></script>
+</body>
+</html>
