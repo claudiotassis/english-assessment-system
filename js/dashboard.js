@@ -1,11 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Check if user is logged in and is a teacher
-    firebase.auth().onAuthStateChanged(function(user) {
-        if (!user) {
-            // Redirect to login if not logged in
-            window.location.href = 'index.html';
-            return;
-        }
+    // Fazer logout explícito quando a página de login é carregada
+    if (window.location.pathname.includes('index.html') || window.location.pathname === '/' || window.location.pathname === '') {
+        firebase.auth().signOut().then(() => {
+            console.log('Usuário deslogado com sucesso');
+        }).catch((error) => {
+            console.error('Erro ao deslogar:', error);
+        });
+    }
         
         // Check if the user is a teacher
         db.collection('teachers').doc(user.uid).get()
