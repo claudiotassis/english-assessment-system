@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Assessment System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>English Assessment System</h1>
+            <p>Present Simple × Present Continuous, Feeling and Perception Verbs</p>
+        </header>
+
+        <main>
+            <div id="login-form" class="card">
+                <h2>Student Login</h2>
+                <form id="student-login">
+                    <div class="form-group">
+                        <label for="email">Email:</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="fullname">Full Name:</label>
+                        <input type="text" id="fullname" name="fullname" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="class">Class:</label>
+                        <select id="class" name="class" required>
+                            <option value="">Select your class</option>
+                            <option value="1A">1A</option>
+                            <option value="1B">1B</option>
+                            <option value="2A">2A</option>
+                            <option value="2B">2B</option>
+                            <option value="3A">3A</option>
+                            <option value="3B">3B</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn primary">Start Assessment</button>
+                    </div>
+                    <div class="form-group text-center">
+                        <p>Are you a teacher? <a href="#" id="teacher-login-link">Login here</a></p>
+                    </div>
+                </form>
+            </div>
+
+            <div id="teacher-login-panel" class="card hidden">
+                <h2>Teacher Login</h2>
+                <form id="teacher-login-form">
+                    <div class="form-group">
+                        <label for="teacher-email">Email:</label>
+                        <input type="email" id="teacher-email" name="teacher-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="teacher-password">Password:</label>
+                        <input type="password" id="teacher-password" name="teacher-password" required>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn primary">Login</button>
+                        <button type="button" id="back-to-student" class="btn secondary">Back</button>
+                    </div>
+                </form>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 English Assessment System. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.8/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.8/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.8/firebase-firestore-compat.js"></script>
+    
+    <!-- Main Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+</body>
+</html>
