@@ -703,7 +703,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add to the list
         issues.forEach(issue => {
             const percentage = (issue.count / assessmentsWithWritingFeedback.length) * 100;
-            const li = document.createElement('li');
+const li = document.createElement('li');
             li.textContent = `${issue.name}: ${percentage.toFixed(0)}% of students`;
             writingIssues.appendChild(li);
         });
@@ -816,7 +816,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             beginAtZero: true,
                             max: 3.0
                         }
-                 }
+                    }
+                }
             });
         } catch (e) {
             console.error('Error creating class performance chart:', e);
@@ -1146,8 +1147,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 updatePassword(currentPassword, newPassword);
             });
         }
-        
-        // Class management
+// Class management
         const addClassBtn = document.getElementById('add-class-btn');
         const addClassForm = document.getElementById('add-class-form');
         const cancelAddClassBtn = document.getElementById('cancel-add-class');
@@ -1487,7 +1487,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 modalContent.innerHTML += `
                     <p><strong>Word Count:</strong> ${assessment.feedback.writing.wordCount} words. ${assessment.feedback.writing.lengthFeedback}</p>
                     <p><strong>Present Simple:</strong> ${assessment.feedback.writing.presentSimpleFeedback}</p>
-                    <p><strong>Present Continuous:</strong> ${assessment.feedback.writing.presentContinuousFeedback}</p>
+<p><strong>Present Continuous:</strong> ${assessment.feedback.writing.presentContinuousFeedback}</p>
                     <p><strong>Perception Verbs:</strong> ${assessment.feedback.writing.perceptionVerbsFeedback}</p>
                     <p><strong>Feeling Verbs:</strong> ${assessment.feedback.writing.feelingVerbsFeedback}</p>
                     <p><strong>Overall Feedback:</strong> ${assessment.feedback.writing.overallFeedback}</p>
