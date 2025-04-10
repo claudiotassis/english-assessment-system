@@ -1,0 +1,469 @@
+/* Dashboard Specific Styles */
+
+/* --- Layout --- */
+.dashboard-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 250px;
+    background-color: #2c3e50;
+    color: white;
+    padding: 1.5rem 0;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.content {
+    flex: 1;
+    padding: 2rem;
+    background-color: #f5f7fa;
+    position: relative;
+}
+
+/* --- Sidebar --- */
+.sidebar-header {
+    padding: 0 1.5rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 1.5rem;
+}
+
+.sidebar-header h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+#teacher-name {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.sidebar-menu {
+    list-style: none;
+}
+
+.sidebar-menu li {
+    padding: 0.75rem 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar-menu li i {
+    margin-right: 0.75rem;
+    width: 20px;
+    text-align: center;
+}
+
+.sidebar-menu li:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-menu li.active {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-left: 4px solid var(--primary-color);
+}
+
+#logout-btn {
+    margin-top: 2rem;
+    color: #ff6b6b;
+}
+
+/* --- Tab Content --- */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* --- Stats Cards --- */
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    background-color: rgba(66, 133, 244, 0.1);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+}
+
+.stat-icon i {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+.stat-info h3 {
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+    color: var(--dark-gray);
+}
+
+.stat-info p {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 0;
+}
+
+/* --- Charts --- */
+.charts-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.chart-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+}
+
+.chart-card h3 {
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--mid-gray);
+}
+
+.full-width {
+    grid-column: span 2;
+}
+
+/* --- Tables --- */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    margin-bottom: 1.5rem;
+}
+
+.data-table th, .data-table td {
+    padding: 1rem;
+    text-align: left;
+}
+
+.data-table th {
+    background-color: #f5f7fa;
+    font-weight: 600;
+}
+
+.data-table tr {
+    border-bottom: 1px solid var(--mid-gray);
+}
+
+.data-table tr:last-child {
+    border-bottom: none;
+}
+
+.data-table tr:hover {
+    background-color: #f9f9f9;
+}
+
+/* --- Filter Controls --- */
+.filter-controls {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.search-box {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--mid-gray);
+    background-color: white;
+}
+
+.search-box input {
+    flex: 1;
+    border: none;
+    padding: 0.75rem;
+    font-size: 0.9rem;
+}
+
+.search-box button {
+    padding: 0.75rem 1rem;
+    background-color: white;
+    border: none;
+    border-left: 1px solid var(--mid-gray);
+    cursor: pointer;
+}
+
+.filter-dropdown {
+    display: flex;
+    align-items: center;
+}
+
+.filter-dropdown label {
+    margin-right: 0.5rem;
+    margin-bottom: 0;
+    font-weight: normal;
+}
+
+.filter-dropdown select {
+    width: auto;
+}
+
+/* --- Pagination --- */
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.pagination button {
+    padding: 0.5rem 1rem;
+    background-color: white;
+    border: 1px solid var(--mid-gray);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination button:not(:disabled):hover {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+/* --- Class Cards --- */
+.class-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+.class-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+}
+
+.class-card h3 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.class-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--mid-gray);
+}
+
+.meta-item {
+    text-align: center;
+}
+
+.meta-item h4 {
+    font-size: 0.8rem;
+    margin-bottom: 0.25rem;
+    color: var(--dark-gray);
+}
+
+.meta-item p {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin-bottom: 0;
+}
+
+/* --- Question Analysis --- */
+.accordion {
+    margin-bottom: 1.5rem;
+}
+
+.accordion-item {
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    margin-bottom: 1rem;
+}
+
+.accordion-header {
+    padding: 1rem 1.5rem;
+    background-color: #f5f7fa;
+    cursor: pointer;
+    position: relative;
+    margin-bottom: 0;
+}
+
+.accordion-header::after {
+    content: '\f107';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    position: absolute;
+    right: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.accordion-item.active .accordion-header::after {
+    transform: rotate(180deg);
+}
+
+.accordion-content {
+    padding: 1.5rem;
+    display: none;
+}
+
+.accordion-item.active .accordion-content {
+    display: block;
+}
+
+/* --- Progress Bars --- */
+.progress-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.progress-container p {
+    width: 120px;
+    margin-bottom: 0;
+    margin-right: 1rem;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 8px;
+    background-color: var(--mid-gray);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-right: 1rem;
+}
+
+.progress {
+    height: 100%;
+    background-color: var(--primary-color);
+}
+
+/* --- Writing Stats --- */
+.writing-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+/* --- Settings --- */
+.settings-section {
+    background-color: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 1.5rem;
+}
+
+.export-options {
+    display: flex;
+    gap: 1rem;
+}
+
+.class-management {
+    display: flex;
+    gap: 2rem;
+}
+
+.class-list, .add-class-form {
+    flex: 1;
+}
+
+/* --- Modal --- */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 8px;
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    max-width: 800px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.close-modal {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+/* --- Responsive --- */
+@media (max-width: 992px) {
+    .charts-container, .stats-container, .class-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .writing-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-container {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+    }
+    
+    .stats-container, .charts-container, .class-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .filter-controls {
+        flex-direction: column;
+    }
+    
+    .class-management {
+        flex-direction: column;
+    }
+}
