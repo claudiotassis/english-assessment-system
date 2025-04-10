@@ -1186,26 +1186,6 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
             });
     }
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const tabLinks = document.querySelectorAll('.sidebar-menu li:not(#logout-btn)');
-    const tabContents = document.querySelectorAll('.tab-content');
-    
-    tabLinks.forEach(link => {
-        link.addEventListener('click', function() {
-            const tabId = this.getAttribute('data-tab');
-            
-            // Remove active class from all tabs
-            tabLinks.forEach(el => el.classList.remove('active'));
-            tabContents.forEach(el => el.classList.remove('active'));
-            
-            // Add active class to current tab
-            this.classList.add('active');
-            document.getElementById(tabId).classList.add('active');
-        });
-    });
-});
-</script>
     
     // Update dashboard statistics
     function updateDashboardStats(assessments) {
