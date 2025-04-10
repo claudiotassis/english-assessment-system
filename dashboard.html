@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - English Assessment System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2>Teacher Dashboard</h2>
+                <span id="teacher-name">Welcome, Teacher</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="active" data-tab="overview"><i class="fas fa-home"></i> Overview</li>
+                <li data-tab="students"><i class="fas fa-user-graduate"></i> Students</li>
+                <li data-tab="classes"><i class="fas fa-users"></i> Classes</li>
+                <li data-tab="questions"><i class="fas fa-question-circle"></i> Question Analysis</li>
+                <li data-tab="settings"><i class="fas fa-cog"></i> Settings</li>
+                <li id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</li>
+            </ul>
+        </nav>
+
+        <main class="content">
+            <!-- Overview Tab -->
+            <div id="overview" class="tab-content active">
+                <h1>Dashboard Overview</h1>
+                
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-user-graduate"></i></div>
+                        <div class="stat-info">
+                            <h3>Total Students</h3>
+                            <p id="total-students">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-users"></i></div>
+                        <div class="stat-info">
+                            <h3>Classes</h3>
+                            <p id="total-classes">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-info">
+                            <h3>Completed Tests</h3>
+                            <p id="completed-tests">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+                        <div class="stat-info">
+                            <h3>Average Score</h3>
+                            <p id="average-score">0.0/3.0</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <h3>Score Distribution</h3>
+                        <canvas id="score-chart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Performance by Class</h3>
+                        <canvas id="class-chart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="recent-container">
+                    <h3>Recent Submissions</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Class</th>
+                                <th>Submission Date</th>
+                                <th>Score</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-submissions">
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Students Tab -->
+            <div id="students" class="tab-content">
+                <h1>Student Performance</h1>
+                
+                <div class="filter-controls">
+                    <div class="search-box">
+                        <input type="text" id="student-search" placeholder="Search by name or email...">
+                        <button><i class="fas fa-search"></i></button>
+                    </div>
+                    <div class="filter-dropdown">
+                        <label for="class-filter">Class:</label>
+                        <select id="class-filter">
+                            <option value="all">All Classes</option>
+                            <!-- Options will be populated by JavaScript -->
+                        </select>
+                    </div>
+                    <div class="filter-dropdown">
+                        <label for="score-filter">Score:</label>
+                        <select id="score-filter">
+                            <option value="all">All Scores</option>
+                            <option value="high">Above 2.0</option>
+                            <option value="medium">1.0 - 2.0</option>
+                            <option value="low">Below 1.0</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Class</th>
+                            <th>Submission Date</th>
+                            <th>Score</th>
+                            <th>Part 1</th>
+                            <th>Part 2</th>
+                            <th>Part 3</th>
+                            <th>Part 4</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="students-table">
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+                
+                <div class="pagination">
+                    <button id="prev-page" disabled><i class="fas fa-chevron-left"></i></button>
+                    <span id="page-info">Page 1 of 1</span>
+                    <button id="next-page" disabled><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+
+            <!-- Classes Tab -->
+            <div id="classes" class="tab-content">
+                <h1>Class Performance</h1>
+                
+                <div class="charts-container">
+                    <div class="chart-card full-width">
+                        <h3>Average Scores by Class</h3>
+                        <canvas id="class-comparison-chart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="class-cards" id="class-cards-container">
+                    <!-- Class cards will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Question Analysis Tab -->
+            <div id="questions" class="tab-content">
+                <h1>Question Analysis</h1>
+                
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <h3>Success Rate by Question</h3>
+                        <canvas id="question-success-chart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Average Points by Section</h3>
+                        <canvas id="section-score-chart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="question-details">
+                    <h3>Detailed Question Performance</h3>
+                    
+                    <div class="accordion" id="question-accordion">
+                        <div class="accordion-item">
+                            <h4 class="accordion-header">Part 1: Theoretical Understanding</h4>
+                            <div class="accordion-content">
+                                <div class="progress-container">
+                                    <p>Question 1a:</p>
+                                    <div class="progress-bar">
+                                        <div class="progress" style="width: 75%" id="q1a-progress"></div>
+                                    </div>
+                                    <span id="q1a-percentage">75%</span>
+                                </div>
+                                <div class="progress-container">
+                                    <p>Question 1b:</p>
+                                    <div class="progress-bar">
+                                        <div class="progress" style="width: 65%" id="q1b-progress"></div>
+                                    </div>
+                                    <span id="q1b-percentage">65%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h4 class="accordion-header">Part 2: Completing Sentences</h4>
+                            <div class="accordion-content">
+                                <!-- Will be populated by JavaScript -->
+                                <div id="part2-questions"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h4 class="accordion-header">Part 3: Error Identification and Correction</h4>
+                            <div class="accordion-content">
+                                <!-- Will be populated by JavaScript -->
+                                <div id="part3-questions"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h4 class="accordion-header">Part 4: Writing Production</h4>
+                            <div class="accordion-content">
+                                <div class="writing-stats">
+                                    <div class="stat-item">
+                                        <h5>Average Score</h5>
+                                        <p id="writing-avg-score">1.2/1.5</p>
+                                    </div>
+                                    <div class="stat-item">
+                                        <h5>Option Popularity</h5>
+                                        <canvas id="writing-options-chart"></canvas>
+                                    </div>
+                                    <div class="stat-item">
+                                        <h5>Common Issues</h5>
+                                        <ul id="writing-issues">
+                                            <!-- Will be populated by JavaScript -->
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings" class="tab-content">
+                <h1>Settings</h1>
+                
+                <div class="settings-section">
+                    <h3>Account Settings</h3>
+                    <form id="account-settings">
+                        <div class="form-group">
+                            <label for="display-name">Display Name</label>
+                            <input type="text" id="display-name">
+                        </div>
+                        <div class="form-group">
+                            <label for="email-address">Email Address</label>
+                            <input type="email" id="email-address" disabled>
+                        </div>
+                        <button type="submit" class="btn primary">Update Account</button>
+                    </form>
+                </div>
+                
+                <div class="settings-section">
+                    <h3>Password</h3>
+                    <form id="password-form">
+                        <div class="form-group">
+                            <label for="current-password">Current Password</label>
+                            <input type="password" id="current-password" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="new-password">New Password</label>
+                            <input type="password" id="new-password" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirm-password">Confirm New Password</label>
+                            <input type="password" id="confirm-password" required>
+                        </div>
+                        <button type="submit" class="btn primary">Change Password</button>
+                    </form>
+                </div>
+                
+                <div class="settings-section">
+                    <h3>Class Management</h3>
+                    <div class="class-management">
+                        <div class="class-list">
+                            <h4>Classes</h4>
+                            <ul id="classes-list">
+                                <!-- Will be populated by JavaScript -->
+                            </ul>
+                            <button id="add-class-btn" class="btn secondary"><i class="fas fa-plus"></i> Add Class</button>
+                        </div>
+                        <div class="add-class-form hidden" id="add-class-form">
+                            <h4>Add New Class</h4>
+                            <form id="new-class-form">
+                                <div class="form-group">
+                                    <label for="class-name">Class Name</label>
+                                    <input type="text" id="class-name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="class-description">Description (optional)</label>
+                                    <textarea id="class-description"></textarea>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn primary">Add Class</button>
+                                    <button type="button" id="cancel-add-class" class="btn secondary">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h3>Export Data</h3>
+                    <div class="export-options">
+                        <button id="export-csv" class="btn secondary"><i class="fas fa-file-csv"></i> Export to CSV</button>
+                        <button id="export-pdf" class="btn secondary"><i class="fas fa-file-pdf"></i> Export to PDF</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Student Detail Modal (hidden by default) -->
+            <div id="student-modal" class="modal hidden">
+                <div class="modal-content">
+                    <span class="close-modal">&times;</span>
+                    <h2>Student Assessment Details</h2>
+                    <div id="student-details"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.8/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.8/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.8/firebase-firestore-compat.js"></script>
+    
+    <!-- Main Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/dashboard.js"></script>
