@@ -1,4 +1,177 @@
-const date = new Date(assessment.submissionDate.seconds * 1000);
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if user is logged in and is a teacher
+    firebase.auth().onAuthStateChanged(function(user) {
+        if (!user) {
+            // Redirect to login if not logged in
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        // Check if the user is a teacher
+        db.collection('teachers').doc(user.uid).get()
+            .then((doc) => {
+                if (!doc.exists) {
+                    // Sign out and redirect if not a teacher
+                    firebase.auth().signOut();
+                    window.location.href = 'index.html';
+                    return;
+                }
+                
+                // Show teacher name
+                const teacherData = doc.data();
+                document.getElementById('teacher-name').textContent = `Welcome, ${teacherData.name}`;
+                
+                // Initialize dashboard
+                initializeDashboard();
+            })
+            .catch((error) => {
+                console.error("Error checking teacher status:", error);
+                firebase.auth().signOut();
+                window.location.href = 'index.html';
+            });
+    });
+    
+    // Initialize dashboard data and UI
+    function initializeDashboard() {
+        // Tab navigation
+        const tabLinks = document.querySelectorAll('.sidebar-menu li:not(#logout-btn)');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        // Log to debug
+        console.log('Menu items found:', tabLinks.length);
+        console.log('Content tabs found:', tabContents.length);
+        
+        tabLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                console.log('Menu item clicked:', this.textContent.trim());
+                const tabId = this.getAttribute('data-tab');
+                console.log('Tab ID:', tabId);
+                
+                if(tabId) {
+                    // Remove active class from all tabs
+                    tabLinks.forEach(el => el.classList.remove('active'));
+                    tabContents.forEach(el => el.classList.remove('active'));
+                    
+                    // Add active class to current tab
+                    this.classList.add('active');
+                    const targetTab = document.getElementById(tabId);
+                    if(targetTab) {
+                        targetTab.classList.add('active');
+                    } else {
+                        console.error('Tab content not found:', tabId);
+                    }
+                } else {
+                    console.error('No data-tab attribute found on menu item');
+                }
+            });
+        });
+        
+        // Logout functionality
+        const logoutBtn = document.getElementById('logout-btn');
+        if(logoutBtn) {
+            logoutBtn.addEventListener('click', function() {
+                console.log('Logout clicked');
+                firebase.auth().signOut()
+                    .then(() => {
+                        window.location.href = 'index.html';
+                    })
+                    .catch((error) => {
+                        console.error('Error signing out:', error);
+                    });
+            });
+        } else {
+            console.error('Logout button not found');
+        }
+        
+        // Load data
+        loadDashboardData();
+        
+        // Initialize accordion functionality
+        initializeAccordion();
+        
+        // Initialize settings functionality
+        initializeSettings();
+    }
+    
+    // Load dashboard data from Firestore
+    function loadDashboardData() {
+        db.collection('assessments').get()
+            .then((querySnapshot) => {
+                const assessments = [];
+                
+                querySnapshot.forEach((doc) => {
+                    const assessment = doc.data();
+                    assessment.id = doc.id;
+                    assessments.push(assessment);
+                });
+                
+                // Update dashboard with the data
+                updateDashboardStats(assessments);
+                updateStudentsTable(assessments);
+                updateClassesTab(assessments);
+                updateQuestionsTab(assessments);
+                
+                // Create charts
+                createCharts(assessments);
+            })
+            .catch((error) => {
+                console.error("Error loading assessments:", error);
+                showAlert('Error loading assessment data.', 'error');
+            });
+    }
+    
+    // Update dashboard statistics
+    function updateDashboardStats(assessments) {
+        // Total students
+        const uniqueStudents = new Set(assessments.map(a => a.studentEmail));
+        document.getElementById('total-students').textContent = uniqueStudents.size;
+        
+        // Total classes
+        const uniqueClasses = new Set(assessments.map(a => a.studentClass));
+        document.getElementById('total-classes').textContent = uniqueClasses.size;
+        
+        // Completed tests
+        document.getElementById('completed-tests').textContent = assessments.length;
+        
+        // Average score
+        const averageScore = assessments.length > 0 ? 
+            assessments.reduce((sum, assessment) => {
+                return sum + parseFloat(assessment.scores.total);
+            }, 0) / assessments.length : 0;
+        
+        document.getElementById('average-score').textContent = averageScore.toFixed(1) + '/3.0';
+        
+        // Recent submissions table
+        const recentSubmissionsTable = document.getElementById('recent-submissions');
+        if (!recentSubmissionsTable) {
+            console.error('Recent submissions table not found');
+            return;
+        }
+        
+        recentSubmissionsTable.innerHTML = '';
+        
+        if (assessments.length === 0) {
+            const row = document.createElement('tr');
+            row.innerHTML = '<td colspan="5">No assessments submitted yet.</td>';
+            recentSubmissionsTable.appendChild(row);
+            return;
+        }
+        
+        const recentSubmissions = [...assessments]
+            .sort((a, b) => {
+                const dateA = a.submissionDate instanceof Date ? a.submissionDate : new Date(a.submissionDate.seconds * 1000);
+                const dateB = b.submissionDate instanceof Date ? b.submissionDate : new Date(b.submissionDate.seconds * 1000);
+                return dateB - dateA;
+            })
+            .slice(0, 5);
+        
+        recentSubmissions.forEach(assessment => {
+            const row = document.createElement('tr');
+            
+            const date = assessment.submissionDate instanceof Date ? 
+                assessment.submissionDate : 
+                new Date(assessment.submissionDate.seconds * 1000);
+                
             const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
             
             row.innerHTML = `
@@ -23,18 +196,37 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
     
     // Update students table
     function updateStudentsTable(assessments) {
+        const studentsTable = document.getElementById('students-table');
+        if (!studentsTable) {
+            console.error('Students table not found');
+            return;
+        }
+        
+        studentsTable.innerHTML = '';
+        
+        if (assessments.length === 0) {
+            const row = document.createElement('tr');
+            row.innerHTML = '<td colspan="10">No assessments submitted yet.</td>';
+            studentsTable.appendChild(row);
+            return;
+        }
+        
         // Sort by submission date (newest first)
         const sortedAssessments = [...assessments]
-            .sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate));
-        
-        const studentsTable = document.getElementById('students-table');
-        studentsTable.innerHTML = '';
+            .sort((a, b) => {
+                const dateA = a.submissionDate instanceof Date ? a.submissionDate : new Date(a.submissionDate.seconds * 1000);
+                const dateB = b.submissionDate instanceof Date ? b.submissionDate : new Date(b.submissionDate.seconds * 1000);
+                return dateB - dateA;
+            });
         
         // Populate table
         sortedAssessments.forEach(assessment => {
             const row = document.createElement('tr');
             
-            const date = new Date(assessment.submissionDate.seconds * 1000);
+            const date = assessment.submissionDate instanceof Date ? 
+                assessment.submissionDate : 
+                new Date(assessment.submissionDate.seconds * 1000);
+                
             const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
             
             row.innerHTML = `
@@ -71,8 +263,15 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
         const scoreFilter = document.getElementById('score-filter');
         const searchInput = document.getElementById('student-search');
         
+        if (!classFilter || !scoreFilter || !searchInput) {
+            console.error('Filter elements not found');
+            return;
+        }
+        
         // Populate class filter options
         const classes = [...new Set(assessments.map(a => a.studentClass))];
+        classFilter.innerHTML = '<option value="all">All Classes</option>';
+        
         classes.forEach(className => {
             const option = document.createElement('option');
             option.value = className;
@@ -124,6 +323,19 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
     
     // Update classes tab
     function updateClassesTab(assessments) {
+        const classCardsContainer = document.getElementById('class-cards-container');
+        if (!classCardsContainer) {
+            console.error('Class cards container not found');
+            return;
+        }
+        
+        classCardsContainer.innerHTML = '';
+        
+        if (assessments.length === 0) {
+            classCardsContainer.innerHTML = '<div class="no-data">No assessments submitted yet.</div>';
+            return;
+        }
+        
         // Group assessments by class
         const classesByName = {};
         assessments.forEach(assessment => {
@@ -135,9 +347,6 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
         });
         
         // Create class cards
-        const classCardsContainer = document.getElementById('class-cards-container');
-        classCardsContainer.innerHTML = '';
-        
         Object.entries(classesByName).forEach(([className, classAssessments]) => {
             // Calculate statistics
             const studentCount = new Set(classAssessments.map(a => a.studentEmail)).size;
@@ -171,7 +380,13 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
             
             // Create a mini chart for each class
             setTimeout(() => {
-                const ctx = document.getElementById(`chart-${className.replace(/\s+/g, '-')}`).getContext('2d');
+                const chartElement = document.getElementById(`chart-${className.replace(/\s+/g, '-')}`);
+                if (!chartElement) {
+                    console.error(`Chart element for class ${className} not found`);
+                    return;
+                }
+                
+                const ctx = chartElement.getContext('2d');
                 
                 // Group scores into ranges
                 const scoreRanges = [0, 1, 2, 3];
@@ -183,60 +398,78 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
                     }).length;
                 });
                 
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: ['0-1', '1-2', '2-3'],
-                        datasets: [{
-                            label: 'Score Distribution',
-                            data: scoreDistribution,
-                            backgroundColor: [
-                                'rgba(255, 99, 132, 0.2)',
-                                'rgba(255, 206, 86, 0.2)',
-                                'rgba(75, 192, 192, 0.2)'
-                            ],
-                            borderColor: [
-                                'rgba(255, 99, 132, 1)',
-                                'rgba(255, 206, 86, 1)',
-                                'rgba(75, 192, 192, 1)'
-                            ],
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    stepSize: 1,
-                                    precision: 0
+                try {
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: ['0-1', '1-2', '2-3'],
+                            datasets: [{
+                                label: 'Score Distribution',
+                                data: scoreDistribution,
+                                backgroundColor: [
+                                    'rgba(255, 99, 132, 0.2)',
+                                    'rgba(255, 206, 86, 0.2)',
+                                    'rgba(75, 192, 192, 0.2)'
+                                ],
+                                borderColor: [
+                                    'rgba(255, 99, 132, 1)',
+                                    'rgba(255, 206, 86, 1)',
+                                    'rgba(75, 192, 192, 1)'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1,
+                                        precision: 0
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: false
                                 }
                             }
-                        },
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
                         }
-                    }
-                });
+                    });
+                } catch (e) {
+                    console.error('Error creating chart:', e);
+                }
             }, 100);
         });
     }
     
     // Update questions tab
     function updateQuestionsTab(assessments) {
-        // Analysis for Part 2 questions
         const part2Container = document.getElementById('part2-questions');
-        part2Container.innerHTML = '';
+        const part3Container = document.getElementById('part3-questions');
         
+        if (!part2Container || !part3Container) {
+            console.error('Question containers not found');
+            return;
+        }
+        
+        part2Container.innerHTML = '';
+        part3Container.innerHTML = '';
+        
+        if (assessments.length === 0) {
+            part2Container.innerHTML = '<div class="no-data">No assessments submitted yet.</div>';
+            part3Container.innerHTML = '<div class="no-data">No assessments submitted yet.</div>';
+            return;
+        }
+        
+        // Analysis for Part 2 questions
         for (let i = 'a'; i <= 'f'; i++) {
             for (let j = 1; j <= 2; j++) {
                 const questionId = `q2${i}${j}`;
                 
                 // Calculate success rate
                 const correctCount = assessments.filter(a => {
-                    const studentAnswer = a.answers[questionId]?.trim().toLowerCase();
+                    const studentAnswer = a.answers && a.answers[questionId] ? a.answers[questionId].trim().toLowerCase() : '';
                     const correctAnswer = assessmentConfig.part2Answers[questionId].toLowerCase();
                     return studentAnswer === correctAnswer;
                 }).length;
@@ -259,17 +492,16 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
         }
         
         // Analysis for Part 3 questions
-        const part3Container = document.getElementById('part3-questions');
-        part3Container.innerHTML = '';
-        
         for (let i = 'a'; i <= 'h'; i++) {
             const questionId = `q3${i}`;
             
             // Calculate success rate
             const correctCount = assessments.filter(a => {
+                if (!a.answers || !a.answers[questionId]) return false;
+                
                 // Normalize student answer
-                let studentAnswer = a.answers[questionId]?.trim();
-                if (studentAnswer?.endsWith('.')) {
+                let studentAnswer = a.answers[questionId].trim();
+                if (studentAnswer.endsWith('.')) {
                     studentAnswer = studentAnswer.slice(0, -1);
                 }
                 
@@ -279,7 +511,7 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
                     correctAnswer = correctAnswer.slice(0, -1);
                 }
                 
-                return studentAnswer?.toLowerCase() === correctAnswer.toLowerCase();
+                return studentAnswer.toLowerCase() === correctAnswer.toLowerCase();
             }).length;
             
             const successRate = (correctCount / assessments.length) * 100;
@@ -306,7 +538,7 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
         };
         
         assessments.forEach(assessment => {
-            const option = assessment.answers['writing-option'];
+            const option = assessment.answers && assessment.answers['writing-option'];
             if (option && optionCounts.hasOwnProperty(option)) {
                 optionCounts[option]++;
             }
@@ -314,62 +546,96 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
         
         // Update chart for writing options
         setTimeout(() => {
-            const ctx = document.getElementById('writing-options-chart').getContext('2d');
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Option A', 'Option B', 'Option C'],
-                    datasets: [{
-                        data: [optionCounts['A'], optionCounts['B'], optionCounts['C']],
-                        backgroundColor: [
-                            'rgba(54, 162, 235, 0.2)',
-                            'rgba(255, 206, 86, 0.2)',
-                            'rgba(75, 192, 192, 0.2)'
-                        ],
-                        borderColor: [
-                            'rgba(54, 162, 235, 1)',
-                            'rgba(255, 206, 86, 1)',
-                            'rgba(75, 192, 192, 1)'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
+            const chartElement = document.getElementById('writing-options-chart');
+            if (!chartElement) {
+                console.error('Writing options chart element not found');
+                return;
+            }
+            
+            const ctx = chartElement.getContext('2d');
+            
+            try {
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Option A', 'Option B', 'Option C'],
+                        datasets: [{
+                            data: [optionCounts['A'], optionCounts['B'], optionCounts['C']],
+                            backgroundColor: [
+                                'rgba(54, 162, 235, 0.2)',
+                                'rgba(255, 206, 86, 0.2)',
+                                'rgba(75, 192, 192, 0.2)'
+                            ],
+                            borderColor: [
+                                'rgba(54, 162, 235, 1)',
+                                'rgba(255, 206, 86, 1)',
+                                'rgba(75, 192, 192, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
                         }
                     }
-                }
-            });
+                });
+            } catch (e) {
+                console.error('Error creating writing options chart:', e);
+            }
         }, 100);
         
         // Calculate average writing score
-        const avgWritingScore = assessments.reduce((sum, a) => sum + parseFloat(a.scores.part4), 0) / assessments.length;
-        document.getElementById('writing-avg-score').textContent = `${avgWritingScore.toFixed(1)}/1.5`;
+        const writingScores = assessments.map(a => parseFloat(a.scores.part4)).filter(score => !isNaN(score));
+        const avgWritingScore = writingScores.length > 0 ? 
+            writingScores.reduce((sum, score) => sum + score, 0) / writingScores.length : 0;
+            
+        const writingAvgScoreElement = document.getElementById('writing-avg-score');
+        if (writingAvgScoreElement) {
+            writingAvgScoreElement.textContent = `${avgWritingScore.toFixed(1)}/1.5`;
+        }
         
         // Analyze common issues in writing
         const writingIssues = document.getElementById('writing-issues');
+        if (!writingIssues) {
+            console.error('Writing issues element not found');
+            return;
+        }
+        
         writingIssues.innerHTML = '';
         
+        if (assessments.length === 0) {
+            writingIssues.innerHTML = '<li>No data available</li>';
+            return;
+        }
+        
         // Simple analysis of common issues based on scores
-        const missingPerceptionVerbs = assessments.filter(a => 
+        const assessmentsWithWritingFeedback = assessments.filter(a => a.feedback && a.feedback.writing);
+        
+        if (assessmentsWithWritingFeedback.length === 0) {
+            writingIssues.innerHTML = '<li>No writing feedback data available</li>';
+            return;
+        }
+        
+        const missingPerceptionVerbs = assessmentsWithWritingFeedback.filter(a => 
             !a.feedback.writing.perceptionVerbsFeedback.includes('Excellent') && 
             !a.feedback.writing.perceptionVerbsFeedback.includes('Good')
         ).length;
         
-        const missingFeelingVerbs = assessments.filter(a => 
+        const missingFeelingVerbs = assessmentsWithWritingFeedback.filter(a => 
             !a.feedback.writing.feelingVerbsFeedback.includes('Excellent') && 
             !a.feedback.writing.feelingVerbsFeedback.includes('Good')
         ).length;
         
-        const incorrectTenses = assessments.filter(a => 
+        const incorrectTenses = assessmentsWithWritingFeedback.filter(a => 
             (!a.feedback.writing.presentSimpleFeedback.includes('Excellent') || 
             !a.feedback.writing.presentContinuousFeedback.includes('Excellent'))
         ).length;
         
-        const tooShort = assessments.filter(a => 
+        const tooShort = assessmentsWithWritingFeedback.filter(a => 
             a.feedback.writing.lengthFeedback.includes('too short')
         ).length;
         
@@ -386,7 +652,7 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
         
         // Add to the list
         issues.forEach(issue => {
-            const percentage = (issue.count / assessments.length) * 100;
+            const percentage = (issue.count / assessmentsWithWritingFeedback.length) * 100;
             const li = document.createElement('li');
             li.textContent = `${issue.name}: ${percentage.toFixed(0)}% of students`;
             writingIssues.appendChild(li);
@@ -395,8 +661,19 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
     
     // Create charts
     function createCharts(assessments) {
+        if (assessments.length === 0) {
+            console.log('No assessments to create charts');
+            return;
+        }
+        
         // Score distribution chart
-        const scoreCtx = document.getElementById('score-chart').getContext('2d');
+        const scoreChartElement = document.getElementById('score-chart');
+        if (!scoreChartElement) {
+            console.error('Score chart element not found');
+            return;
+        }
+        
+        const scoreCtx = scoreChartElement.getContext('2d');
         
         // Group scores into ranges
         const scoreRanges = [
@@ -415,33 +692,43 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
             }).length;
         });
         
-        new Chart(scoreCtx, {
-            type: 'bar',
-            data: {
-                labels: ['0-0.5', '0.5-1.0', '1.0-1.5', '1.5-2.0', '2.0-2.5', '2.5-3.0'],
-                datasets: [{
-                    label: 'Number of Students',
-                    data: scoreDistribution,
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1,
-                            precision: 0
+        try {
+            new Chart(scoreCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['0-0.5', '0.5-1.0', '1.0-1.5', '1.5-2.0', '2.0-2.5', '2.5-3.0'],
+                    datasets: [{
+                        label: 'Number of Students',
+                        data: scoreDistribution,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1,
+                                precision: 0
+                            }
                         }
                     }
                 }
-            }
-        });
+            });
+        } catch (e) {
+            console.error('Error creating score distribution chart:', e);
+        }
         
         // Class performance chart
-        const classCtx = document.getElementById('class-chart').getContext('2d');
+        const classChartElement = document.getElementById('class-chart');
+        if (!classChartElement) {
+            console.error('Class chart element not found');
+            return;
+        }
+        
+        const classCtx = classChartElement.getContext('2d');
         
         // Group by class
         const classesByName = {};
@@ -460,30 +747,40 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
             return classAssessments.reduce((sum, a) => sum + parseFloat(a.scores.total), 0) / classAssessments.length;
         });
         
-        new Chart(classCtx, {
-            type: 'bar',
-            data: {
-                labels: classNames,
-                datasets: [{
-                    label: 'Average Score',
-                    data: classAverages,
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 3.0
+        try {
+            new Chart(classCtx, {
+                type: 'bar',
+                data: {
+                    labels: classNames,
+                    datasets: [{
+                        label: 'Average Score',
+                        data: classAverages,
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 3.0
+                        }
                     }
                 }
-            }
-        });
+            });
+        } catch (e) {
+            console.error('Error creating class performance chart:', e);
+        }
         
         // Class comparison chart (full width)
-        const classComparisonCtx = document.getElementById('class-comparison-chart').getContext('2d');
+        const classComparisonChartElement = document.getElementById('class-comparison-chart');
+        if (!classComparisonChartElement) {
+            console.error('Class comparison chart element not found');
+            return;
+        }
+        
+        const classComparisonCtx = classComparisonChartElement.getContext('2d');
         
         // Calculate average scores for each section by class
         const sectionLabels = ['Part 1 (0.5)', 'Part 2 (0.6)', 'Part 3 (0.4)', 'Part 4 (1.5)'];
@@ -501,9 +798,7 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
         
         // Create datasets for each class
         const colorPalette = [
-            { bg: 'rgba(54, 162, 235, 0.2)', border: 'rgba(54, 162, 235, 1)' },
-            { bg: 'rgba(255, 99, 132, 0.2)', border: 'rgba(255, 99, 132, 1)' },
-            { bg: 'rgba(255, 206, 86, 0.2)', border: 'rgba(255, 206, 86, 1)' },
+           { bg: 'rgba(255, 206, 86, 0.2)', border: 'rgba(255, 206, 86, 1)' },
             { bg: 'rgba(75, 192, 192, 0.2)', border: 'rgba(75, 192, 192, 1)' },
             { bg: 'rgba(153, 102, 255, 0.2)', border: 'rgba(153, 102, 255, 1)' },
             { bg: 'rgba(255, 159, 64, 0.2)', border: 'rgba(255, 159, 64, 1)' }
@@ -520,24 +815,34 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
             };
         });
         
-        new Chart(classComparisonCtx, {
-            type: 'bar',
-            data: {
-                labels: sectionLabels,
-                datasets: classDatasets
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 1.5 // Maximum possible score for any section
+        try {
+            new Chart(classComparisonCtx, {
+                type: 'bar',
+                data: {
+                    labels: sectionLabels,
+                    datasets: classDatasets
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1.5 // Maximum possible score for any section
+                        }
                     }
                 }
-            }
-        });
+            });
+        } catch (e) {
+            console.error('Error creating class comparison chart:', e);
+        }
         
         // Question success rate chart
-        const questionSuccessCtx = document.getElementById('question-success-chart').getContext('2d');
+        const questionSuccessChartElement = document.getElementById('question-success-chart');
+        if (!questionSuccessChartElement) {
+            console.error('Question success chart element not found');
+            return;
+        }
+        
+        const questionSuccessCtx = questionSuccessChartElement.getContext('2d');
         
         // Calculate success rates for Part 2 and Part 3 questions
         const part2SuccessRates = [];
@@ -550,7 +855,8 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
                 
                 // Calculate success rate
                 const correctCount = assessments.filter(a => {
-                    const studentAnswer = a.answers[questionId]?.trim().toLowerCase();
+                    if (!a.answers || !a.answers[questionId]) return false;
+                    const studentAnswer = a.answers[questionId].trim().toLowerCase();
                     const correctAnswer = assessmentConfig.part2Answers[questionId].toLowerCase();
                     return studentAnswer === correctAnswer;
                 }).length;
@@ -570,11 +876,13 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
             
             // Calculate success rate
             const correctCount = assessments.filter(a => {
+                if (!a.answers || !a.answers[questionId]) return false;
+                
                 // Normalize answers for comparison
-                let studentAnswer = a.answers[questionId]?.trim();
+                let studentAnswer = a.answers[questionId].trim();
                 let correctAnswer = assessmentConfig.part3Answers[questionId];
                 
-                if (studentAnswer?.endsWith('.')) {
+                if (studentAnswer.endsWith('.')) {
                     studentAnswer = studentAnswer.slice(0, -1);
                 }
                 
@@ -582,7 +890,7 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
                     correctAnswer = correctAnswer.slice(0, -1);
                 }
                 
-                return studentAnswer?.toLowerCase() === correctAnswer.toLowerCase();
+                return studentAnswer.toLowerCase() === correctAnswer.toLowerCase();
             }).length;
             
             const successRate = (correctCount / assessments.length) * 100;
@@ -590,40 +898,50 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
             part3Labels.push(label);
         }
         
-        new Chart(questionSuccessCtx, {
-            type: 'bar',
-            data: {
-                labels: [...part2Labels, ...part3Labels],
-                datasets: [
-                    {
-                        label: 'Success Rate (%)',
-                        data: [...part2SuccessRates, ...part3SuccessRates],
-                        backgroundColor: function(context) {
-                            const index = context.dataIndex;
-                            return index < part2Labels.length ? 
-                                'rgba(75, 192, 192, 0.2)' : 'rgba(255, 99, 132, 0.2)';
-                        },
-                        borderColor: function(context) {
-                            const index = context.dataIndex;
-                            return index < part2Labels.length ? 
-                                'rgba(75, 192, 192, 1)' : 'rgba(255, 99, 132, 1)';
-                        },
-                        borderWidth: 1
-                    }
-                ]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100
+        try {
+            new Chart(questionSuccessCtx, {
+                type: 'bar',
+                data: {
+                    labels: [...part2Labels, ...part3Labels],
+                    datasets: [
+                        {
+                            label: 'Success Rate (%)',
+                            data: [...part2SuccessRates, ...part3SuccessRates],
+                            backgroundColor: function(context) {
+                                const index = context.dataIndex;
+                                return index < part2Labels.length ? 
+                                    'rgba(75, 192, 192, 0.2)' : 'rgba(255, 99, 132, 0.2)';
+                            },
+                            borderColor: function(context) {
+                                const index = context.dataIndex;
+                                return index < part2Labels.length ? 
+                                    'rgba(75, 192, 192, 1)' : 'rgba(255, 99, 132, 1)';
+                            },
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
                     }
                 }
-            }
-        });
+            });
+        } catch (e) {
+            console.error('Error creating question success chart:', e);
+        }
         
         // Section score chart
-        const sectionScoreCtx = document.getElementById('section-score-chart').getContext('2d');
+        const sectionScoreChartElement = document.getElementById('section-score-chart');
+        if (!sectionScoreChartElement) {
+            console.error('Section score chart element not found');
+            return;
+        }
+        
+        const sectionScoreCtx = sectionScoreChartElement.getContext('2d');
         
         // Calculate average scores for each section
         const part1Avg = assessments.reduce((sum, a) => sum + parseFloat(a.scores.part1), 0) / assessments.length;
@@ -637,27 +955,31 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
         const part3Percent = (part3Avg / 0.4) * 100;
         const part4Percent = (part4Avg / 1.5) * 100;
         
-        new Chart(sectionScoreCtx, {
-            type: 'radar',
-            data: {
-                labels: ['Part 1', 'Part 2', 'Part 3', 'Part 4'],
-                datasets: [{
-                    label: 'Average Score (%)',
-                    data: [part1Percent, part2Percent, part3Percent, part4Percent],
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                scales: {
-                    r: {
-                        beginAtZero: true,
-                        max: 100
+        try {
+            new Chart(sectionScoreCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Part 1', 'Part 2', 'Part 3', 'Part 4'],
+                    datasets: [{
+                        label: 'Average Score (%)',
+                        data: [part1Percent, part2Percent, part3Percent, part4Percent],
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100
+                        }
                     }
                 }
-            }
-        });
+            });
+        } catch (e) {
+            console.error('Error creating section score chart:', e);
+        }
     }
     
     // Initialize accordion functionality
@@ -929,11 +1251,22 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
                     const assessment = doc.data();
                     
                     // Format date
-                    const date = new Date(assessment.submissionDate.seconds * 1000);
-                    assessment.formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+                    let formattedDate = 'N/A';
+                    if (assessment.submissionDate) {
+                        const date = assessment.submissionDate instanceof Date ? 
+                            assessment.submissionDate : 
+                            new Date(assessment.submissionDate.seconds * 1000);
+                        formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+                    }
+                    assessment.formattedDate = formattedDate;
                     
                     assessments.push(assessment);
                 });
+                
+                if (assessments.length === 0) {
+                    showAlert('No assessment data to export.', 'info');
+                    return;
+                }
                 
                 // Create CSV content
                 let csvContent = 'Student Name,Email,Class,Submission Date,Total Score,Part 1 Score,Part 2 Score,Part 3 Score,Part 4 Score\n';
@@ -953,6 +1286,8 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+                
+                showAlert('CSV data exported successfully.', 'success');
             })
             .catch((error) => {
                 console.error("Error exporting data:", error);
@@ -974,9 +1309,19 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
         const modalContent = document.getElementById('student-details');
         const closeModal = document.querySelector('.close-modal');
         
+        if (!modal || !modalContent || !closeModal) {
+            console.error('Modal elements not found');
+            return;
+        }
+        
         // Format date
-        const date = new Date(assessment.submissionDate.seconds * 1000);
-        const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        let formattedDate = 'N/A';
+        if (assessment.submissionDate) {
+            const date = assessment.submissionDate instanceof Date ? 
+                assessment.submissionDate : 
+                new Date(assessment.submissionDate.seconds * 1000);
+            formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        }
         
         // Create content
         modalContent.innerHTML = `
@@ -1003,13 +1348,13 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
                 <h4>Part 1: Theoretical Understanding</h4>
                 <div class="answer-item">
                     <p><strong>Question 1a:</strong></p>
-                    <p class="student-answer">${assessment.answers.q1a}</p>
-                    <p class="feedback">${assessment.feedback.q1a}</p>
+                    <p class="student-answer">${assessment.answers?.q1a || 'No answer provided'}</p>
+                    <p class="feedback">${assessment.feedback?.q1a || 'No feedback available'}</p>
                 </div>
                 <div class="answer-item">
                     <p><strong>Question 1b:</strong></p>
-                    <p class="student-answer">${assessment.answers.q1b}</p>
-                    <p class="feedback">${assessment.feedback.q1b}</p>
+                    <p class="student-answer">${assessment.answers?.q1b || 'No answer provided'}</p>
+                    <p class="feedback">${assessment.feedback?.q1b || 'No feedback available'}</p>
                 </div>
                 
                 <h4>Part 2: Completing Sentences</h4>
@@ -1020,9 +1365,9 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
             modalContent.innerHTML += `
                 <div class="answer-item">
                     <p><strong>Question 2${i}:</strong></p>
-                    <p class="student-answer">${assessment.answers[`q2${i}1`]} / ${assessment.answers[`q2${i}2`]}</p>
-                    <p class="feedback">${assessment.feedback[`q2${i}1`]}</p>
-                    <p class="feedback">${assessment.feedback[`q2${i}2`]}</p>
+                    <p class="student-answer">${assessment.answers?.[`q2${i}1`] || 'No answer'} / ${assessment.answers?.[`q2${i}2`] || 'No answer'}</p>
+                    <p class="feedback">${assessment.feedback?.[`q2${i}1`] || 'No feedback'}</p>
+                    <p class="feedback">${assessment.feedback?.[`q2${i}2`] || 'No feedback'}</p>
                 </div>
             `;
         }
@@ -1034,39 +1379,71 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
             modalContent.innerHTML += `
                 <div class="answer-item">
                     <p><strong>Question 3${i}:</strong></p>
-                    <p class="student-answer">${assessment.answers[`q3${i}`]}</p>
-                    <p class="feedback">${assessment.feedback[`q3${i}`]}</p>
+                    <p class="student-answer">${assessment.answers?.[`q3${i}`] || 'No answer provided'}</p>
+                    <p class="feedback">${assessment.feedback?.[`q3${i}`] || 'No feedback available'}</p>
                 </div>
             `;
         }
         
-        // Add Part 4 answer
-        modalContent.innerHTML += `
-            <h4>Part 4: Writing Production (Option ${assessment.answers['writing-option']})</h4>
-            <div class="answer-item">
-                <p class="student-answer">${assessment.answers['writing-response'].replace(/\n/g, '<br>')}</p>
-                <div class="writing-feedback">
+        // Add Part 4 answer if available
+        if (assessment.answers && assessment.answers['writing-response']) {
+            modalContent.innerHTML += `
+                <h4>Part 4: Writing Production (Option ${assessment.answers['writing-option'] || 'N/A'})</h4>
+                <div class="answer-item">
+                    <p class="student-answer">${assessment.answers['writing-response'].replace(/\n/g, '<br>')}</p>
+                    <div class="writing-feedback">
+            `;
+            
+            // Add writing feedback if available
+            if (assessment.feedback && assessment.feedback.writing) {
+                modalContent.innerHTML += `
                     <p><strong>Word Count:</strong> ${assessment.feedback.writing.wordCount} words. ${assessment.feedback.writing.lengthFeedback}</p>
                     <p><strong>Present Simple:</strong> ${assessment.feedback.writing.presentSimpleFeedback}</p>
                     <p><strong>Present Continuous:</strong> ${assessment.feedback.writing.presentContinuousFeedback}</p>
                     <p><strong>Perception Verbs:</strong> ${assessment.feedback.writing.perceptionVerbsFeedback}</p>
                     <p><strong>Feeling Verbs:</strong> ${assessment.feedback.writing.feelingVerbsFeedback}</p>
                     <p><strong>Overall Feedback:</strong> ${assessment.feedback.writing.overallFeedback}</p>
+                `;
+            } else {
+                modalContent.innerHTML += `<p>No detailed feedback available.</p>`;
+            }
+            
+            modalContent.innerHTML += `
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+        } else {
+            modalContent.innerHTML += `
+                <h4>Part 4: Writing Production</h4>
+                <div class="answer-item">
+                    <p class="student-answer">No writing response submitted.</p>
+                </div>
+            `;
+        }
         
         // Show modal
         modal.classList.remove('hidden');
         
         // Close modal when clicking X or outside
-        closeModal.addEventListener('click', function() {
+        const closeModalHandler = function() {
             modal.classList.add('hidden');
-        });
+        };
         
-        window.addEventListener('click', function(e) {
+        closeModal.addEventListener('click', closeModalHandler);
+        
+        const windowClickHandler = function(e) {
             if (e.target === modal) {
                 modal.classList.add('hidden');
+            }
+        };
+        
+        window.addEventListener('click', windowClickHandler);
+        
+        // Remove event listeners when modal is closed to prevent memory leaks
+        modal.addEventListener('transitionend', function() {
+            if (modal.classList.contains('hidden')) {
+                closeModal.removeEventListener('click', closeModalHandler);
+                window.removeEventListener('click', windowClickHandler);
             }
         });
     }
@@ -1077,145 +1454,16 @@ const date = new Date(assessment.submissionDate.seconds * 1000);
         alertDiv.className = `alert ${type}`;
         alertDiv.textContent = message;
         
-        document.querySelector('.content').prepend(alertDiv);
-        
-        // Remove the alert after 3 seconds
-        setTimeout(() => {
-            alertDiv.remove();
-        }, 3000);
+        const contentElement = document.querySelector('.content');
+        if (contentElement) {
+            contentElement.prepend(alertDiv);
+            
+            // Remove the alert after 3 seconds
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 3000);
+        } else {
+            console.error('Content element not found for showing alert');
+        }
     }
 });
-",document.addEventListener('DOMContentLoaded', function() {
-    // Check if user is logged in and is a teacher
-    firebase.auth().onAuthStateChanged(function(user) {
-        if (!user) {
-            // Redirect to login if not logged in
-            window.location.href = 'index.html';
-            return;
-        }
-        
-        // Check if the user is a teacher
-        db.collection('teachers').doc(user.uid).get()
-            .then((doc) => {
-                if (!doc.exists) {
-                    // Sign out and redirect if not a teacher
-                    firebase.auth().signOut();
-                    window.location.href = 'index.html';
-                    return;
-                }
-                
-                // Show teacher name
-                const teacherData = doc.data();
-                document.getElementById('teacher-name').textContent = `Welcome, ${teacherData.name}`;
-                
-                // Initialize dashboard
-                initializeDashboard();
-            })
-            .catch((error) => {
-                console.error("Error checking teacher status:", error);
-                firebase.auth().signOut();
-                window.location.href = 'index.html';
-            });
-    });
-    
-    // Initialize dashboard data and UI
-    function initializeDashboard() {
-        // Tab navigation
-        const tabLinks = document.querySelectorAll('.sidebar-menu li:not(#logout-btn)');
-        const tabContents = document.querySelectorAll('.tab-content');
-        
-        tabLinks.forEach(link => {
-            link.addEventListener('click', function() {
-                const tabId = this.getAttribute('data-tab');
-                
-                // Remove active class from all tabs
-                tabLinks.forEach(el => el.classList.remove('active'));
-                tabContents.forEach(el => el.classList.remove('active'));
-                
-                // Add active class to current tab
-                this.classList.add('active');
-                document.getElementById(tabId).classList.add('active');
-            });
-        });
-        
-        // Logout functionality
-        document.getElementById('logout-btn').addEventListener('click', function() {
-            firebase.auth().signOut()
-                .then(() => {
-                    window.location.href = 'index.html';
-                })
-                .catch((error) => {
-                    console.error('Error signing out:', error);
-                });
-        });
-        
-        // Load data
-        loadDashboardData();
-        
-        // Initialize accordion functionality
-        initializeAccordion();
-        
-        // Initialize settings functionality
-        initializeSettings();
-    }
-    
-    // Load dashboard data from Firestore
-    function loadDashboardData() {
-        db.collection('assessments').get()
-            .then((querySnapshot) => {
-                const assessments = [];
-                
-                querySnapshot.forEach((doc) => {
-                    const assessment = doc.data();
-                    assessment.id = doc.id;
-                    assessments.push(assessment);
-                });
-                
-                // Update dashboard with the data
-                updateDashboardStats(assessments);
-                updateStudentsTable(assessments);
-                updateClassesTab(assessments);
-                updateQuestionsTab(assessments);
-                
-                // Create charts
-                createCharts(assessments);
-            })
-            .catch((error) => {
-                console.error("Error loading assessments:", error);
-                showAlert('Error loading assessment data.', 'error');
-            });
-    }
-
-    
-    // Update dashboard statistics
-    function updateDashboardStats(assessments) {
-        // Total students
-        const uniqueStudents = new Set(assessments.map(a => a.studentEmail));
-        document.getElementById('total-students').textContent = uniqueStudents.size;
-        
-        // Total classes
-        const uniqueClasses = new Set(assessments.map(a => a.studentClass));
-        document.getElementById('total-classes').textContent = uniqueClasses.size;
-        
-        // Completed tests
-        document.getElementById('completed-tests').textContent = assessments.length;
-        
-        // Average score
-        const averageScore = assessments.reduce((sum, assessment) => {
-            return sum + parseFloat(assessment.scores.total);
-        }, 0) / assessments.length;
-        
-        document.getElementById('average-score').textContent = averageScore.toFixed(1) + '/3.0';
-        
-        // Recent submissions table
-        const recentSubmissions = assessments
-            .sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate))
-            .slice(0, 5);
-        
-        const recentSubmissionsTable = document.getElementById('recent-submissions');
-        recentSubmissionsTable.innerHTML = '';
-        
-        recentSubmissions.forEach(assessment => {
-            const row = document.createElement('tr');
-            
-            const date
