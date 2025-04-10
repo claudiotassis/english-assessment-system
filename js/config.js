@@ -1,15 +1,14 @@
 // Firebase configuration
+// Firebase configuration
 const firebaseConfig = {
-    // Replace with your own Firebase config object
-    // You'll need to create a Firebase project at https://console.firebase.google.com/
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDWHIn_u4ZR6z-R8mjvXQrfi65BLnA-es8",
+  authDomain: "english-assessment-system.firebaseapp.com",
+  projectId: "english-assessment-system",
+  storageBucket: "english-assessment-system.firebasestorage.app",
+  messagingSenderId: "749884700814",
+  appId: "1:749884700814:web:a2329011973a448450b1df",
+  measurementId: "G-N2M7ZKVEWG"
 };
-
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 
