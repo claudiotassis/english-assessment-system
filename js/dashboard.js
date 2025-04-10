@@ -1,12 +1,11 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Fazer logout explícito quando a página de login é carregada
-    if (window.location.pathname.includes('index.html') || window.location.pathname === '/' || window.location.pathname === '') {
-        firebase.auth().signOut().then(() => {
-            console.log('Usuário deslogado com sucesso');
-        }).catch((error) => {
-            console.error('Erro ao deslogar:', error);
-        });
-    }
+    // Check if user is logged in and is a teacher
+    firebase.auth().onAuthStateChanged(function(user) {
+        if (!user) {
+            // Redirect to login if not logged in
+            window.location.href = 'index.html';
+            return;
+        }
         
         // Check if the user is a teacher
         db.collection('teachers').doc(user.uid).get()
@@ -312,8 +311,58 @@ document.addEventListener('DOMContentLoaded', function() {
                 return true;
             });
             
-            // Update table
-            updateStudentsTable(filteredAssessments);
+            // Update table with filtered data
+            updateStudentsTableData(filteredAssessments);
+        }
+        
+        // Update table with filtered data
+        function updateStudentsTableData(filteredAssessments) {
+            const studentsTable = document.getElementById('students-table');
+            if (!studentsTable) {
+                return;
+            }
+            
+            studentsTable.innerHTML = '';
+            
+            if (filteredAssessments.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="10">No matching assessments found.</td>';
+                studentsTable.appendChild(row);
+                return;
+            }
+            
+            filteredAssessments.forEach(assessment => {
+                const row = document.createElement('tr');
+                
+                const date = assessment.submissionDate instanceof Date ? 
+                    assessment.submissionDate : 
+                    new Date(assessment.submissionDate.seconds * 1000);
+                    
+                const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+                
+                row.innerHTML = `
+                    <td>${assessment.studentName}</td>
+                    <td>${assessment.studentEmail}</td>
+                    <td>${assessment.studentClass}</td>
+                    <td>${formattedDate}</td>
+                    <td>${assessment.scores.total}/3.0</td>
+                    <td>${assessment.scores.part1}/0.5</td>
+                    <td>${assessment.scores.part2}/0.6</td>
+                    <td>${assessment.scores.part3}/0.4</td>
+                    <td>${assessment.scores.part4}/1.5</td>
+                    <td><button class="btn-view" data-id="${assessment.id}">View</button></td>
+                `;
+                
+                studentsTable.appendChild(row);
+            });
+            
+            // Add event listeners to view buttons
+            document.querySelectorAll('.btn-view').forEach(button => {
+                button.addEventListener('click', function() {
+                    const assessmentId = this.getAttribute('data-id');
+                    showStudentDetail(assessmentId, assessments);
+                });
+            });
         }
         
         // Add event listeners
@@ -767,8 +816,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             beginAtZero: true,
                             max: 3.0
                         }
-                    }
-                }
+                 }
             });
         } catch (e) {
             console.error('Error creating class performance chart:', e);
@@ -799,7 +847,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Create datasets for each class
         const colorPalette = [
-           { bg: 'rgba(255, 206, 86, 0.2)', border: 'rgba(255, 206, 86, 1)' },
+            { bg: 'rgba(54, 162, 235, 0.2)', border: 'rgba(54, 162, 235, 1)' },
+            { bg: 'rgba(255, 99, 132, 0.2)', border: 'rgba(255, 99, 132, 1)' },
+            { bg: 'rgba(255, 206, 86, 0.2)', border: 'rgba(255, 206, 86, 1)' },
             { bg: 'rgba(75, 192, 192, 0.2)', border: 'rgba(75, 192, 192, 1)' },
             { bg: 'rgba(153, 102, 255, 0.2)', border: 'rgba(153, 102, 255, 1)' },
             { bg: 'rgba(255, 159, 64, 0.2)', border: 'rgba(255, 159, 64, 1)' }
@@ -1013,8 +1063,16 @@ document.addEventListener('DOMContentLoaded', function() {
                                 const teacherData = doc.data();
                                 
                                 // Fill form
-                                document.getElementById('display-name').value = teacherData.name;
-                                document.getElementById('email-address').value = user.email;
+                                const displayNameInput = document.getElementById('display-name');
+                                const emailAddressInput = document.getElementById('email-address');
+                                
+                                if (displayNameInput) {
+                                    displayNameInput.value = teacherData.name || '';
+                                }
+                                
+                                if (emailAddressInput) {
+                                    emailAddressInput.value = user.email || '';
+                                }
                             }
                         })
                         .catch((error) => {
@@ -1027,7 +1085,13 @@ document.addEventListener('DOMContentLoaded', function() {
             accountSettingsForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 
-                const displayName = document.getElementById('display-name').value;
+                const displayNameInput = document.getElementById('display-name');
+                if (!displayNameInput) {
+                    showAlert('Display name input not found.', 'error');
+                    return;
+                }
+                
+                const displayName = displayNameInput.value;
                 
                 // Update teacher data
                 firebase.auth().onAuthStateChanged(function(user) {
@@ -1037,7 +1101,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         })
                         .then(() => {
                             // Update UI
-                            document.getElementById('teacher-name').textContent = `Welcome, ${displayName}`;
+                            const teacherNameElement = document.getElementById('teacher-name');
+                            if (teacherNameElement) {
+                                teacherNameElement.textContent = `Welcome, ${displayName}`;
+                            }
                             showAlert('Account settings updated successfully.', 'success');
                         })
                         .catch((error) => {
@@ -1056,9 +1123,18 @@ document.addEventListener('DOMContentLoaded', function() {
             passwordForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 
-                const currentPassword = document.getElementById('current-password').value;
-                const newPassword = document.getElementById('new-password').value;
-                const confirmPassword = document.getElementById('confirm-password').value;
+                const currentPasswordInput = document.getElementById('current-password');
+                const newPasswordInput = document.getElementById('new-password');
+                const confirmPasswordInput = document.getElementById('confirm-password');
+                
+                if (!currentPasswordInput || !newPasswordInput || !confirmPasswordInput) {
+                    showAlert('Password inputs not found.', 'error');
+                    return;
+                }
+                
+                const currentPassword = currentPasswordInput.value;
+                const newPassword = newPasswordInput.value;
+                const confirmPassword = confirmPasswordInput.value;
                 
                 // Check if new passwords match
                 if (newPassword !== confirmPassword) {
@@ -1091,8 +1167,16 @@ document.addEventListener('DOMContentLoaded', function() {
             newClassForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 
-                const className = document.getElementById('class-name').value;
-                const classDescription = document.getElementById('class-description').value;
+                const classNameInput = document.getElementById('class-name');
+                const classDescriptionInput = document.getElementById('class-description');
+                
+                if (!classNameInput) {
+                    showAlert('Class name input not found.', 'error');
+                    return;
+                }
+                
+                const className = classNameInput.value;
+                const classDescription = classDescriptionInput ? classDescriptionInput.value : '';
                 
                 // Add class to Firestore
                 db.collection('classes').add({
@@ -1229,7 +1313,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 showAlert('Password updated successfully.', 'success');
                 
                 // Reset form
-                document.getElementById('password-form').reset();
+                const passwordForm = document.getElementById('password-form');
+                if (passwordForm) {
+                    passwordForm.reset();
+                }
             })
             .catch((error) => {
                 console.error("Error updating password:", error);
