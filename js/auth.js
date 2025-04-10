@@ -1,4 +1,13 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Logout on index.html to prevent automatic login
+    if (window.location.pathname.includes('index.html') || window.location.pathname === '/' || window.location.pathname === '') {
+        firebase.auth().signOut().then(() => {
+            console.log('User logged out successfully');
+        }).catch((error) => {
+            console.error('Error logging out:', error);
+        });
+    }
+    
     // DOM Elements
     const studentLoginForm = document.getElementById('student-login');
     const teacherLoginLink = document.getElementById('teacher-login-link');
@@ -9,7 +18,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Check if user is already logged in
     firebase.auth().onAuthStateChanged(function(user) {
-        if (user) {
+        // Only redirect if not on the index page
+        if (user && !window.location.pathname.includes('index.html') && window.location.pathname !== '/' && window.location.pathname !== '') {
             // Check if the user is a teacher
             db.collection('teachers').doc(user.uid).get()
                 .then((doc) => {
@@ -155,11 +165,17 @@ document.addEventListener('DOMContentLoaded', function() {
         alertDiv.className = `alert ${type}`;
         alertDiv.textContent = message;
         
-        document.querySelector('header').after(alertDiv);
-        
-        // Remove the alert after 3 seconds
-        setTimeout(() => {
-            alertDiv.remove();
-        }, 3000);
+        const header = document.querySelector('header');
+        if (header) {
+            header.after(alertDiv);
+            
+            // Remove the alert after 3 seconds
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 3000);
+        } else {
+            console.error('Header element not found for showing alert');
+            alert(message); // Fallback to browser alert
+        }
     }
 });
